@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>容器连接跟踪事件实时查询</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9962 12 21.9962C11.6496 21.9962 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21H6C5.20435 21 4.44129 20.6839 3.87868 20.1213C3.31607 19.5587 3 18.7956 3 18V6C3 5.20435 3.31607 4.44129 3.87868 3.87868C4.44129 3.31607 5.20435 3 6 3H18C18.7957 3 19.5587 3.31607 20.1213 3.87868C20.6839 4.44129 21 5.20435 21 6V18C21 18.7956 20.6839 19.5587 20.1213 20.1213C19.5587 20.6839 18.7957 21 18 21H13.73ZM6 5C5.73478 5 5.48043 5.10536 5.29289 5.29289C5.10536 5.48043 5 5.73478 5 6V18C5 18.2652 5.10536 18.5196 5.29289 18.7071C5.48043 18.8946 5.73478 19 6 19H18C18.2652 19 18.5196 18.8946 18.7071 18.7071C18.8946 18.5196 19 18.2652 19 18V6C19 5.73478 18.8946 5.48043 18.7071 5.29289C18.5196 5.10536 18.2652 5 18 5H6Z" fill="#6B7280"/>
+                    <path d="M7 8H17M7 12H17M7 16H13" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="header-content">
+                <h1>容器连接跟踪事件实时查询</h1>
+                <p class="subtitle">统一查询多个 Agent 的连接跟踪信息，定位源 Pod</p>
+            </div>
+        </header>
+
+        <!-- 查询表单 -->
+        <section class="query-section">
+            <h2 class="section-title">查询参数</h2>
+            <form id="queryForm" class="query-form">
+                <div class="form-group full-width">
+                    <label for="protocol">协议</label>
+                    <select id="protocol" name="protocol" class="form-control">
+                        <option value="TCP">TCP</option>
+                        <option value="UDP">UDP</option>
+                        <option value="ICMP">ICMP</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="sourceIp">
+                            <span class="required">*</span> 源 IP
+                            <span class="hint">(数据库/RabbitMQ 等存储实例 IP)</span>
+                        </label>
+                        <input type="text" id="sourceIp" name="sourceIp" class="form-control" placeholder="192.168.1.226" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sourcePort">
+                            <span class="required">*</span> 源端口
+                        </label>
+                        <input type="text" id="sourcePort" name="sourcePort" class="form-control" placeholder="5672" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="targetIp">
+                            <span class="required">*</span> 目标 IP
+                            <span class="hint">(应用 IP，同时作为 Agent 地址)</span>
+                        </label>
+                        <input type="text" id="targetIp" name="targetIp" class="form-control" placeholder="172.16.11.105" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetPort">
+                            <span class="required">*</span> 目标端口
+                        </label>
+                        <input type="text" id="targetPort" name="targetPort" class="form-control" placeholder="56606" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    查询连接状态
+                </button>
+            </form>
+        </section>
+
+        <!-- 查询结果 -->
+        <section id="resultSection" class="result-section" style="display: none;">
+            <h2 class="section-title">查询结果</h2>
+            <div class="result-content">
+                <div class="status-badge">
+                    <span id="connectionStatus">ESTABLISHED</span>
+                </div>
+
+                <div class="result-main">
+                    <div class="result-header">
+                        <div class="result-ip-container">
+                            <div class="result-label">ORIGIN SOURCE IP (源 POD IP)</div>
+                            <div id="originSourceIpContainer" class="result-ip-list">
+                                <!-- IP 地址将动态插入这里 -->
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-share" id="shareBtn" title="复制分享链接">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 5.12548 15.0077 5.24917 15.0227 5.37061L8.08259 9.19471C7.54305 8.46677 6.71932 8 5.8 8C4.14315 8 2.8 9.34315 2.8 11C2.8 12.6569 4.14315 14 5.8 14C6.71932 14 7.54305 13.5332 8.08259 12.8053L15.0227 16.6294C15.0077 16.7508 15 16.8745 15 17C15 18.6569 16.3431 20 18 20C19.6569 20 21 18.6569 21 17C21 15.3431 19.6569 14 18 14C17.0807 14 16.2569 14.4668 15.7174 15.1947L8.77734 11.3706C8.79229 11.2492 8.8 11.1255 8.8 11C8.8 10.8745 8.79229 10.7508 8.77734 10.6294L15.7174 6.80529C16.2569 7.53323 17.0807 8 18 8Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                分享
+                            </button>
+                            <button class="btn-success" id="queryConsultBtn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5 13L9 17L19 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                查询容器
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pod-info-tabs">
+                        <div class="pod-info-header">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="#10B981" stroke-width="2"/>
+                                <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="#10B981" stroke-width="2"/>
+                            </svg>
+                            <span>Pod 信息</span>
+                            <span class="pod-count-badge" id="podCountBadge">3</span>
+                        </div>
+                        
+                        <!-- 标签页导航 -->
+                        <div class="tabs-nav" id="tabsNav">
+                            <!-- 标签页将动态生成 -->
+                        </div>
+                        
+                        <!-- 标签页内容 -->
+                        <div class="tabs-content" id="tabsContent">
+                            <!-- 内容将动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <p>Conntrack Server · Agent Port: 9358</p>
+    </footer>
+
+    <!-- Toast 提示容器 -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
