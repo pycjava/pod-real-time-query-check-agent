@@ -1,9 +1,43 @@
 # 容器连接跟踪事件实时查询系统
 
-一个用于统一查询多个 Agent 的连接跟踪信息、定位源 Pod 的 Web 应用程序。
+一个用于统一查询多个 Agent 的连接跟踪信息、定位源 Pod 的完整 Web 应用程序，包含前端界面和 Flask 后端 API 服务。（个人练习版本）
 
-## 功能特性
+## 📑 目录导航
 
+- [项目结构](#-项目结构)
+- [功能特性](#-功能特性)
+- [技术栈](#️-技术栈)
+- [快速开始](#-快速开始)
+  - [前端 Web 应用](#-前端-web-应用real-time-js)
+  - [Flask 后端 API](#-flask-后端-api-服务)
+- [前后端对接](#-前后端对接)
+- [API 接口文档](#api-接口文档)
+- [使用说明](#-前端使用说明)
+- [部署指南](#部署)
+- [常见问题](#-常见问题)
+- [贡献指南](#-贡献指南)
+
+---
+
+## 📂 项目结构
+
+```
+pod-real-time-query-check-agent/
+├── real-time-js/          # 前端 Web 应用
+│   ├── index.html         # 主页面
+│   ├── style.css          # 样式文件
+│   └── script.js          # JavaScript 逻辑
+├── real-time-py/          # Flask 后端 API
+│   ├── app/              # 应用代码
+│   ├── config.py         # 配置文件
+│   ├── main.py           # 入口文件
+│   └── requirements.txt  # 依赖包
+└── README.md             # 项目文档（本文件）
+```
+
+## 🎯 功能特性
+
+### 前端功能
 - 🔍 **实时查询**: 查询容器连接跟踪事件状态
 - 🌐 **多协议支持**: 支持 TCP、UDP、ICMP 协议
 - 📊 **详细信息**: 显示连接状态、源 Pod IP 和完整的 Pod 信息
@@ -13,6 +47,15 @@
 - 🔗 **URL 参数支持**: 支持从 URL 参数自动填充表单并查询
 - 📋 **链接分享**: 一键复制查询链接，方便分享查询结果
 - 📑 **多 Pod 标签页**: 支持多个 Pod 信息的标签页切换显示
+
+### 后端功能
+- ✅ **RESTful API**: 标准的 HTTP 接口
+- ✅ **连接状态查询**: TCP/UDP/ICMP 协议支持
+- ✅ **Pod 信息查询**: 获取详细的 Pod 信息
+- ✅ **参数验证**: IP 地址、端口号、协议类型验证
+- ✅ **CORS 跨域支持**: 支持前后端分离部署
+- ✅ **错误处理**: 完整的错误处理和日志记录
+- ✅ **K8s 集成**: 支持集成 Kubernetes API（可选）
 
 ## 页面预览
 
@@ -37,23 +80,49 @@
      - 分享按钮（复制查询链接）
      - 查询咨询按钮（查看信息摘要）
 
-## 技术栈
+## 🛠️ 技术栈
 
+### 前端技术栈
 - **HTML5**: 语义化标记
 - **CSS3**: 现代样式、渐变、动画
 - **JavaScript (ES6+)**: 原生 JavaScript，无框架依赖
 
-## 快速开始
+### 后端技术栈
+- **Flask 3.0**: 轻量级 Web 框架
+- **Flask-CORS**: 跨域资源共享
+- **Python 3.8+**: 编程语言
+- **Gunicorn**: WSGI HTTP 服务器
+- **Kubernetes Client**: K8s API 客户端（可选）
 
-### 安装
+## 🚀 快速开始
 
-无需任何依赖安装，这是一个纯静态的 Web 应用。
+本项目分为前端和后端两部分，可以独立运行或组合使用。
 
-### 运行
+### 方式一：仅运行前端（使用模拟数据）
 
-1. **使用本地服务器**（推荐）
+前端可以独立运行，使用内置的模拟数据进行演示。
+
+### 方式二：前后端联调（推荐）
+
+先启动后端 API 服务，再运行前端，实现完整的数据查询功能。
+
+---
+
+## 📱 前端 Web 应用（real-time-js）
+
+### 特点
+
+- 纯静态 Web 应用，无需任何依赖
+- 可独立运行（使用模拟数据）
+- 也可对接后端 API（实时数据）
+
+### 快速运行前端
+
+#### 1. 使用本地服务器（推荐）
 
 ```bash
+cd real-time-js
+
 # 使用 Python 3
 python -m http.server 8000
 
@@ -64,15 +133,17 @@ python -m SimpleHTTPServer 8000
 npx http-server -p 8000
 ```
 
-2. **直接打开**
+#### 2. 直接打开
 
-双击 `index.html` 文件在浏览器中打开。
+双击 `real-time-js/index.html` 文件在浏览器中打开。
 
-3. **访问应用**
+#### 3. 访问应用
 
 打开浏览器访问 `http://localhost:8000`
 
-## 使用说明
+### 前端技术实现
+
+## 📖 前端使用说明
 
 ### 基础查询
 
@@ -347,44 +418,52 @@ http://conntrack.example.com/?protocol=TCP&sourceIp=MQ_IP&sourcePort=5672&target
 3. 检查资源使用情况
 ```
 
-## 项目结构
+## 📁 详细项目结构
+
+### 前端项目结构（real-time-js）
 
 ```
-sql源地址查询/
+real-time-js/
 │
 ├── index.html          # 主 HTML 文件
 ├── style.css           # 样式文件
 ├── script.js           # JavaScript 逻辑
-└── README.md           # 项目说明文档
+└── test-links.html     # 测试链接页面
 ```
 
-## 文件说明
+**文件说明**:
 
-### index.html
-包含完整的页面结构：
-- 页面头部和标题
-- 查询参数表单
-- 查询结果展示区域
-- 页脚信息
+- **index.html**: 包含完整的页面结构（表单、结果展示区域）
+- **style.css**: 全局样式、组件样式、响应式设计、动画效果
+- **script.js**: 表单验证、API 调用、结果展示、URL 参数处理
 
-### style.css
-提供完整的样式定义：
-- 全局样式和布局
-- 表单组件样式
-- 结果展示样式
-- 响应式设计
-- 动画效果
+### 后端项目结构（real-time-py）
 
-### script.js
-实现所有交互逻辑：
-- 表单验证（IP 和端口）
-- 表单提交处理
-- 结果展示更新
-- 错误提示管理
-- API 调用接口（预留）
-- URL 参数解析和自动填充
-- 分享链接生成和复制
-- Toast 提示显示
+```
+real-time-py/
+├── app/
+│   ├── __init__.py      # Flask 应用初始化
+│   ├── routes.py        # API 路由定义
+│   ├── models.py        # 数据模型
+│   ├── validators.py    # 参数验证
+│   └── services.py      # 业务逻辑服务
+├── config.py            # 配置管理
+├── main.py              # 应用入口
+├── requirements.txt     # Python 依赖
+├── env.sample           # 环境变量示例
+├── Dockerfile           # Docker 镜像构建
+└── README.md            # 后端详细文档
+```
+
+**核心模块**:
+
+- **app/__init__.py**: Flask 应用工厂，注册蓝图和扩展
+- **app/routes.py**: API 路由（查询接口、状态接口）
+- **app/models.py**: 数据模型（PodInfo、ConnectionStatus）
+- **app/validators.py**: 参数验证（IP、端口、协议）
+- **app/services.py**: 业务逻辑（K8s 查询、连接跟踪）
+- **config.py**: 多环境配置（开发/生产）
+- **main.py**: 应用启动入口
 
 ## 技术实现细节
 
@@ -454,18 +533,52 @@ console.log(params);
 .share-success   /* 分享成功动画 */
 ```
 
-## API 集成
+## 🔗 前后端对接
 
-当前版本使用模拟数据进行演示。要集成实际的后端 API：
+### 前端对接后端 API
 
-1. 在 `script.js` 中找到 `queryConnectionStatus` 函数
-2. 取消注释 API 调用代码
-3. 修改 API 端点 URL
-4. 根据实际 API 响应格式调整数据处理逻辑
+前端默认使用模拟数据。要对接后端 Flask API，需要修改 `real-time-js/script.js` 中的 `queryConnectionStatus` 函数：
 
-### API 请求格式示例
-
+**修改前（使用模拟数据）**:
 ```javascript
+async function queryConnectionStatus(params) {
+    // 返回模拟数据
+    return mockData[params.protocol] || mockData['TCP'];
+}
+```
+
+**修改后（调用后端 API）**:
+```javascript
+async function queryConnectionStatus(params) {
+    try {
+        // 调用 Flask 后端 API
+        const response = await fetch('http://localhost:5000/api/conntrack/query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            return result.data;  // 返回实际数据
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('API 调用失败:', error);
+        // 降级到模拟数据
+        return mockData[params.protocol] || mockData['TCP'];
+    }
+}
+```
+
+### API 数据格式
+
+**前端发送的请求**:
+```json
 {
   "protocol": "TCP",
   "sourceIp": "192.168.1.226",
@@ -475,19 +588,51 @@ console.log(params);
 }
 ```
 
-### API 响应格式示例
-
-```javascript
+**后端返回的响应**:
+```json
 {
-  "status": "ESTABLISHED",
-  "originSourceIp": "172.17.0.3",
-  "podInfo": {
-    "podIp": "172.17.0.3",
-    "podName": "alertcenter-765f4d54dc-vlswp",
-    "namespace": "test-devops"
+  "success": true,
+  "message": "查询成功",
+  "data": {
+    "status": "ESTABLISHED",
+    "originSourceIp": ["172.17.0.3", "172.17.0.4"],
+    "podInfoList": [
+      {
+        "podIp": "172.17.0.3",
+        "podName": "alertcenter-765f4d54dc-vlswp",
+        "namespace": "test-devops",
+        "node": "node-1",
+        "status": "Running"
+      }
+    ]
   }
 }
 ```
+
+### 对接步骤
+
+1. **启动后端服务**
+   ```bash
+   cd real-time-py
+   python main.py
+   ```
+
+2. **修改前端代码**
+   - 编辑 `real-time-js/script.js`
+   - 找到 `queryConnectionStatus` 函数
+   - 替换为上面的"修改后"代码
+
+3. **启动前端服务**
+   ```bash
+   cd real-time-js
+   python -m http.server 8000
+   ```
+
+4. **测试集成**
+   - 访问 `http://localhost:8000`
+   - 填写查询参数
+   - 点击查询按钮
+   - 查看从后端返回的数据
 
 ## 浏览器兼容性
 
@@ -619,10 +764,38 @@ sudo systemctl restart nginx
 
 💡 **提示**：在生产环境部署时，建议配置 Web 服务器支持 URL 重写，隐藏 `.html` 扩展名。
 
-## 常见问题
+## ❓ 常见问题
+
+### 前后端对接相关
 
 ### Q: 为什么查询后没有显示真实数据？
-**A**: 当前版本使用模拟数据。请参考"API 集成"部分连接实际后端服务。
+**A**: 
+- 如果只运行了前端，默认使用模拟数据
+- 要获取真实数据，需要：
+  1. 启动后端 Flask 服务（`cd real-time-py && python main.py`）
+  2. 修改前端 `script.js` 中的 `queryConnectionStatus` 函数
+  3. 确保后端服务正常运行（访问 `http://localhost:5000/health`）
+
+### Q: 出现 CORS 跨域错误怎么办？
+**A**: 
+- 检查后端 Flask 服务是否正常运行
+- 确认后端 `config.py` 中 CORS 配置正确：`CORS_ORIGINS = '*'`（开发环境）
+- 生产环境应设置具体的前端域名
+
+### Q: 前端请求后端一直转圈不显示？
+**A**: 
+- 打开浏览器开发者工具（F12）查看 Console 错误信息
+- 检查 Network 标签，查看 API 请求状态
+- 确认后端服务是否正常运行
+- 检查前端代码中的变量作用域是否正确
+
+### Q: 后端返回 200 但前端不显示数据？
+**A**: 
+- 检查后端返回的数据格式是否正确
+- 确认前端代码中 `result.data` 的处理逻辑
+- 查看浏览器 Console 是否有 JavaScript 错误
+
+### 前端功能相关
 
 ### Q: 可以修改 UI 样式吗？
 **A**: 当然可以！所有样式都在 `style.css` 中，可以自由修改。
@@ -697,10 +870,349 @@ MIT License
 
 ---
 
-**注意**: 这是一个前端演示项目。在生产环境中使用时，请确保：
-- 连接真实的后端 API
-- 添加适当的安全措施（HTTPS、认证等）
-- 实现错误处理和日志记录
-- 添加监控和性能优化
+---
+
+## 🔧 Flask 后端 API 服务
+
+### 简介
+
+`real-time-py` 目录包含一个完整的 Flask 后端 API 服务，用于查询 Kubernetes 服务器连接状态。
+
+### 核心功能
+
+- ✅ 连接状态查询（TCP/UDP/ICMP 协议）
+- ✅ Pod 信息查询（IP、Name、Namespace、Node、Status）
+- ✅ 参数验证（IP 地址、端口号、协议类型）
+- ✅ RESTful API 接口
+- ✅ CORS 跨域支持
+- ✅ 错误处理和日志记录
+
+### 快速启动后端
+
+#### 1. 安装依赖
+
+```bash
+cd real-time-py
+
+# 创建虚拟环境
+python -m venv venv
+
+# 激活虚拟环境
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+#### 2. 配置环境变量（可选）
+
+```bash
+# 复制环境变量示例文件
+cp env.sample .env
+
+# 编辑 .env 文件
+# FLASK_PORT=5000
+# FLASK_DEBUG=True
+# CORS_ORIGINS=*
+```
+
+#### 3. 运行服务
+
+```bash
+python main.py
+```
+
+服务将在 `http://localhost:5000` 启动。
+
+#### 4. 验证服务
+
+```bash
+# 健康检查
+curl http://localhost:5000/health
+
+# 测试查询接口
+curl -X POST http://localhost:5000/api/conntrack/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "protocol": "TCP",
+    "sourceIp": "192.168.1.226",
+    "sourcePort": "5672",
+    "targetIp": "172.16.11.105",
+    "targetPort": "56606"
+  }'
+```
+
+### API 接口文档
+
+#### 1. 查询连接状态
+
+**接口**: `POST /api/conntrack/query`
+
+**请求体**:
+```json
+{
+    "protocol": "TCP",
+    "sourceIp": "192.168.1.226",
+    "sourcePort": "5672",
+    "targetIp": "172.16.11.105",
+    "targetPort": "56606"
+}
+```
+
+**响应**:
+```json
+{
+    "success": true,
+    "message": "查询成功",
+    "data": {
+        "status": "ESTABLISHED",
+        "originSourceIp": ["172.17.0.3", "172.17.0.4"],
+        "podInfoList": [
+            {
+                "podIp": "172.17.0.3",
+                "podName": "alertcenter-765f4d54dc-vlswp",
+                "namespace": "test-devops",
+                "node": "node-1",
+                "status": "Running"
+            }
+        ]
+    }
+}
+```
+
+#### 2. 服务状态
+
+**接口**: `GET /api/conntrack/status`
+
+**响应**:
+```json
+{
+    "success": true,
+    "data": {
+        "service": "conntrack-query-service",
+        "status": "running",
+        "version": "1.0.0",
+        "agentPort": 9358
+    }
+}
+```
+
+#### 3. 健康检查
+
+**接口**: `GET /health`
+
+**响应**:
+```json
+{
+    "status": "healthy",
+    "service": "pod-real-time-query-check-agent"
+}
+```
+
+### 前端集成后端
+
+要让前端调用后端 API，需要修改 `real-time-js/script.js` 中的 `queryConnectionStatus` 函数：
+
+```javascript
+// 修改为调用后端 API
+async function queryConnectionStatus(params) {
+    try {
+        const response = await fetch('http://localhost:5000/api/conntrack/query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(params)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            return result.data;
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error) {
+        console.error('API 调用失败:', error);
+        // 降级到模拟数据
+        return mockData[params.protocol] || mockData['TCP'];
+    }
+}
+```
+
+### 后端项目结构
+
+```
+real-time-py/
+├── app/
+│   ├── __init__.py      # Flask 应用初始化
+│   ├── routes.py        # API 路由定义
+│   ├── models.py        # 数据模型
+│   ├── validators.py    # 参数验证
+│   └── services.py      # 业务逻辑服务
+├── config.py            # 配置管理
+├── main.py              # 应用入口
+├── requirements.txt     # Python 依赖
+├── env.sample           # 环境变量示例
+├── Dockerfile           # Docker 镜像构建
+└── README.md            # 后端详细文档
+```
+
+### Docker 部署
+
+#### 使用 Docker 运行后端
+
+```bash
+cd real-time-py
+
+# 构建镜像
+docker build -t pod-query-agent:latest .
+
+# 运行容器
+docker run -d -p 5000:5000 \
+  -e FLASK_ENV=production \
+  -e FLASK_DEBUG=False \
+  pod-query-agent:latest
+```
+
+### K8s API 集成
+
+当前版本使用模拟数据。要集成真实的 Kubernetes API，请在 `real-time-py/app/services.py` 中实现：
+
+```python
+from kubernetes import client, config
+
+class K8sService:
+    def __init__(self):
+        # 集群内运行
+        config.load_incluster_config()
+        # 或集群外运行
+        # config.load_kube_config()
+        
+        self.v1 = client.CoreV1Api()
+    
+    def query_pod_by_ip(self, ip: str):
+        pods = self.v1.list_pod_for_all_namespaces()
+        for pod in pods.items:
+            if pod.status.pod_ip == ip:
+                return {
+                    'podIp': pod.status.pod_ip,
+                    'podName': pod.metadata.name,
+                    'namespace': pod.metadata.namespace,
+                    'node': pod.spec.node_name,
+                    'status': pod.status.phase
+                }
+        return None
+```
+
+### 生产环境部署
+
+#### 使用 Gunicorn
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:5000 main:app
+```
+
+#### Nginx 反向代理
+
+```nginx
+server {
+    listen 80;
+    server_name api.your-domain.com;
+
+    location /api/ {
+        proxy_pass http://localhost:5000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+### 安全建议
+
+生产环境部署时请注意：
+
+1. **修改密钥**: 更改 `.env` 文件中的 `SECRET_KEY`
+2. **配置 CORS**: 设置具体的允许源，而不是 `*`
+3. **启用 HTTPS**: 使用 SSL/TLS 证书
+4. **添加认证**: 实现 API 密钥或 JWT 认证
+5. **K8s 权限**: 配置合适的 RBAC 权限
+
+### 更多信息
+
+详细的后端文档请查看 [real-time-py/README.md](real-time-py/README.md)
+
+---
+
+## 📚 完整使用流程
+
+### 1. 启动后端服务
+
+```bash
+cd real-time-py
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+### 2. 启动前端服务
+
+```bash
+cd real-time-js
+python -m http.server 8000
+```
+
+### 3. 访问应用
+
+打开浏览器访问 `http://localhost:8000`
+
+### 4. 测试查询
+
+1. 填写查询参数
+2. 点击"查询连接状态"按钮
+3. 查看从后端 API 返回的实时数据
+
+---
+
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+### 开发流程
+
+1. Fork 本项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+---
+
+## 📄 许可证
+
+MIT License
+
+---
+
+## 📞 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 提交 Issue
+- 创建 Pull Request
+- 邮箱: support@example.com
+
+---
+
+**注意**: 在生产环境中使用时，请确保：
+- ✅ 连接真实的后端 API 或 K8s 集群
+- ✅ 添加适当的安全措施（HTTPS、认证等）
+- ✅ 实现完整的错误处理和日志记录
+- ✅ 添加监控和性能优化
+- ✅ 配置合适的 RBAC 权限
 
 💡 **提示**：如有问题或建议，欢迎反馈！
