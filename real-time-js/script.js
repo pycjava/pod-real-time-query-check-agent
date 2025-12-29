@@ -9,6 +9,10 @@ const tabsContent = document.getElementById('tabsContent');
 const queryConsultBtn = document.getElementById('queryConsultBtn');
 const shareBtn = document.getElementById('shareBtn');
 const toast = document.getElementById('toast');
+const containerModal = document.getElementById('containerModal');
+const modalBody = document.getElementById('modalBody');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+const modalFooterCloseBtn = document.getElementById('modalFooterCloseBtn');
 
 // 模拟数据 - 实际应用中应该从后端API获取
 const mockData = {
@@ -139,6 +143,107 @@ function showToast(message, duration = 3000) {
         toast.classList.remove('show');
     }, duration);
 }
+
+// 显示容器信息模态框
+function showContainerModal(status, originIps, pods) {
+    // 构建模态框内容
+    let modalContent = `
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <span class="modal-section-icon">📊</span>
+                <span>连接状态</span>
+            </div>
+            <div class="modal-info-card">
+                <div class="modal-info-row">
+                    <span class="modal-info-label">状态</span>
+                    <span class="modal-status-badge">${status}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <span class="modal-section-icon">🌐</span>
+                <span>源 Pod IP 地址</span>
+            </div>
+            <div class="modal-info-card">
+                ${originIps.map((ip, index) => `
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">IP ${index + 1}</span>
+                        <span class="modal-info-value">${ip}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">
+                <span class="modal-section-icon">📦</span>
+                <span>Pod 容器信息</span>
+                <span class="modal-pod-number">${pods.length}</span>
+            </div>
+            ${pods.map((pod, index) => `
+                <div class="modal-info-card">
+                    <div style="font-weight: 700; color: #10b981; margin-bottom: 12px; font-size: 15px;">
+                        Pod ${index + 1}
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Pod IP</span>
+                        <span class="modal-info-value">${pod['Pod IP']}</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Pod Name</span>
+                        <span class="modal-info-value">${pod['Pod Name']}</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Namespace</span>
+                        <span class="modal-info-value">${pod['Namespace']}</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Node</span>
+                        <span class="modal-info-value">${pod['Node']}</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label">Status</span>
+                        <span class="modal-status-badge">${pod['Status']}</span>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    modalBody.innerHTML = modalContent;
+    containerModal.classList.add('show');
+    
+    // 阻止页面滚动
+    document.body.style.overflow = 'hidden';
+}
+
+// 关闭模态框
+function closeContainerModal() {
+    containerModal.classList.remove('show');
+    
+    // 恢复页面滚动
+    document.body.style.overflow = 'auto';
+}
+
+// 模态框关闭按钮事件
+modalCloseBtn.addEventListener('click', closeContainerModal);
+modalFooterCloseBtn.addEventListener('click', closeContainerModal);
+
+// 点击遮罩层关闭模态框
+containerModal.addEventListener('click', function (e) {
+    if (e.target === containerModal || e.target.classList.contains('modal-overlay')) {
+        closeContainerModal();
+    }
+});
+
+// ESC 键关闭模态框
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && containerModal.classList.contains('show')) {
+        closeContainerModal();
+    }
+});
 
 // 显示源 IP 地址（支持单个或多个）
 function displayOriginSourceIPs(ipData) {
@@ -410,24 +515,8 @@ queryConsultBtn.addEventListener('click', function () {
 
     console.log('查询咨询数据:', { status: connectionStatus.textContent, originIps, pods: allPods });
 
-    // 构建展示信息
-    const ipList = originIps.length > 1
-        ? originIps.map((ip, i) => `  IP ${i + 1}: ${ip}`).join('\n')
-        : originIps[0];
-
-    const podList = allPods.map((pod, i) =>
-        `\nPod ${i + 1}:\n` +
-        `  Pod IP: ${pod['Pod IP']}\n` +
-        `  Pod Name: ${pod['Pod Name']}\n` +
-        `  Namespace: ${pod['Namespace']}\n` +
-        `  Node: ${pod['Node']}\n` +
-        `  Status: ${pod['Status']}`
-    ).join('\n');
-
-    alert('查询信息已准备好！\n\n' +
-        `状态: ${connectionStatus.textContent}\n\n` +
-        `源 Pod IP:\n${ipList}\n` +
-        `${podList}`);
+    // 显示模态框
+    showContainerModal(connectionStatus.textContent, originIps, allPods);
 });
 
 // 分享按钮点击事件

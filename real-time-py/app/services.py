@@ -23,7 +23,6 @@ class K8sService:
         
         Args:
             ip: Pod IP地址
-            namespace: 命名空间（可选）
             
         Returns:
             Pod信息字典或None
