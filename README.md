@@ -24,15 +24,25 @@
 ```
 pod-real-time-query-check-agent/
 ├── real-time-js/          # 前端 Web 应用
-│   ├── index.html         # 主页面
+│   ├── index.html         # 主 HTML 文件
 │   ├── style.css          # 样式文件
-│   └── script.js          # JavaScript 逻辑
+│   ├── script.js          # JavaScript 逻辑
+│   └── test-links.html    # 测试链接页面
 ├── real-time-py/          # Flask 后端 API
-│   ├── app/              # 应用代码
-│   ├── config.py         # 配置文件
-│   ├── main.py           # 入口文件
-│   └── requirements.txt  # 依赖包
-└── README.md             # 项目文档（本文件）
+│   ├── app/               # 应用代码
+│   │   ├── __init__.py    # Flask 应用初始化
+│   │   ├── routes.py      # API 路由定义
+│   │   ├── models.py      # 数据模型
+│   │   ├── validators.py  # 参数验证
+│   │   └── services.py    # 业务逻辑服务
+│   ├── config.py          # 配置管理
+│   ├── main.py            # 应用入口
+│   ├── requirements.txt   # Python 依赖
+│   ├── env.sample         # 环境变量示例
+│   ├── Dockerfile         # Docker 镜像构建
+│   └── README.md          # 后端详细文档
+├── LICENSE                # MIT 许可证
+└── README.md              # 项目文档（本文件）
 ```
 
 ## 🎯 功能特性
@@ -418,44 +428,16 @@ http://conntrack.example.com/?protocol=TCP&sourceIp=MQ_IP&sourcePort=5672&target
 3. 检查资源使用情况
 ```
 
-## 📁 详细项目结构
+## 📁 核心模块说明
 
-### 前端项目结构（real-time-js）
-
-```
-real-time-js/
-│
-├── index.html          # 主 HTML 文件
-├── style.css           # 样式文件
-├── script.js           # JavaScript 逻辑
-└── test-links.html     # 测试链接页面
-```
-
-**文件说明**:
+### 前端模块（real-time-js）
 
 - **index.html**: 包含完整的页面结构（表单、结果展示区域）
 - **style.css**: 全局样式、组件样式、响应式设计、动画效果
 - **script.js**: 表单验证、API 调用、结果展示、URL 参数处理
+- **test-links.html**: URL 参数功能测试页面
 
-### 后端项目结构（real-time-py）
-
-```
-real-time-py/
-├── app/
-│   ├── __init__.py      # Flask 应用初始化
-│   ├── routes.py        # API 路由定义
-│   ├── models.py        # 数据模型
-│   ├── validators.py    # 参数验证
-│   └── services.py      # 业务逻辑服务
-├── config.py            # 配置管理
-├── main.py              # 应用入口
-├── requirements.txt     # Python 依赖
-├── env.sample           # 环境变量示例
-├── Dockerfile           # Docker 镜像构建
-└── README.md            # 后端详细文档
-```
-
-**核心模块**:
+### 后端模块（real-time-py）
 
 - **app/__init__.py**: Flask 应用工厂，注册蓝图和扩展
 - **app/routes.py**: API 路由（查询接口、状态接口）
@@ -853,22 +835,9 @@ sudo systemctl restart nginx
 - ✅ 实现响应式设计
 - ✅ 添加加载动画和过渡效果
 
-## 贡献
 
-欢迎提交 Issue 和 Pull Request！
 
-## 许可证
 
-MIT License
-
-## 联系方式
-
-如有问题或建议，请通过以下方式联系：
-
-- 邮箱: support@example.com
-- 项目地址: https://github.com/your-repo/conntrack-query
-
----
 
 ---
 
@@ -1012,54 +981,6 @@ curl -X POST http://localhost:5000/api/conntrack/query \
 }
 ```
 
-### 前端集成后端
-
-要让前端调用后端 API，需要修改 `real-time-js/script.js` 中的 `queryConnectionStatus` 函数：
-
-```javascript
-// 修改为调用后端 API
-async function queryConnectionStatus(params) {
-    try {
-        const response = await fetch('http://localhost:5000/api/conntrack/query', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(params)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            return result.data;
-        } else {
-            throw new Error(result.error);
-        }
-    } catch (error) {
-        console.error('API 调用失败:', error);
-        // 降级到模拟数据
-        return mockData[params.protocol] || mockData['TCP'];
-    }
-}
-```
-
-### 后端项目结构
-
-```
-real-time-py/
-├── app/
-│   ├── __init__.py      # Flask 应用初始化
-│   ├── routes.py        # API 路由定义
-│   ├── models.py        # 数据模型
-│   ├── validators.py    # 参数验证
-│   └── services.py      # 业务逻辑服务
-├── config.py            # 配置管理
-├── main.py              # 应用入口
-├── requirements.txt     # Python 依赖
-├── env.sample           # 环境变量示例
-├── Dockerfile           # Docker 镜像构建
-└── README.md            # 后端详细文档
-```
 
 ### Docker 部署
 
@@ -1194,7 +1115,9 @@ python -m http.server 8000
 
 ## 📄 许可证
 
-MIT License
+本项目采用 MIT 许可证。详细信息请查看 [LICENSE](LICENSE) 文件。
+
+Copyright (c) 2025 Xiaodong Yu
 
 ---
 
