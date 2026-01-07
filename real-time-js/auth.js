@@ -111,6 +111,12 @@ async function requireAuth() {
  * 跳转到登录页面
  */
 function redirectToLogin() {
+    // 隐藏加载遮罩层（如果存在）
+    const authLoadingOverlay = document.getElementById('authLoadingOverlay');
+    if (authLoadingOverlay) {
+        authLoadingOverlay.style.display = 'none';
+    }
+    
     // 保存当前页面URL，登录后可以返回
     const currentUrl = window.location.href;
     const returnUrl = encodeURIComponent(currentUrl);
