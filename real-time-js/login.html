@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信登录 - 容器连接跟踪查询系统</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 登录页面专属样式 */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            margin-bottom: 32px;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-logo svg {
+            width: 48px;
+            height: 48px;
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 15px;
+            color: #6b7280;
+        }
+
+        .qrcode-container {
+            margin: 32px 0;
+            padding: 24px;
+            background: #f9fafb;
+            border-radius: 16px;
+            border: 2px dashed #e5e7eb;
+        }
+
+        .qrcode-wrapper {
+            width: 240px;
+            height: 240px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #qrcodeCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .qrcode-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .qrcode-overlay.show {
+            display: flex;
+        }
+
+        .qrcode-status {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .qrcode-tips {
+            margin-top: 16px;
+            font-size: 14px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .wechat-icon {
+            width: 24px;
+            height: 24px;
+            color: #07c160;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .login-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0fdf4;
+            color: #15803d;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            color: #10b981;
+        }
+
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            color: #ef4444;
+        }
+
+        @media (max-width: 640px) {
+            .login-card {
+                padding: 32px 24px;
+            }
+
+            .qrcode-wrapper {
+                width: 200px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 7H4C2.89543 7 2 7.89543 2 9V19C2 20.1046 2.89543 21 4 21H20C21.1046 21 22 20.1046 22 19V9C22 7.89543 21.1046 7 20 7Z" stroke="white" stroke-width="2"/>
+                        <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="white" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h1 class="login-title">微信扫码登录</h1>
+                <p class="login-subtitle">使用微信扫描二维码登录系统</p>
+            </div>
+
+            <div class="qrcode-container">
+                <div class="qrcode-wrapper">
+                    <canvas id="qrcodeCanvas"></canvas>
+                    <div class="qrcode-overlay" id="qrcodeOverlay">
+                        <div class="spinner" id="loadingSpinner"></div>
+                        <div class="qrcode-status" id="qrcodeStatus">正在加载...</div>
+                    </div>
+                </div>
+                <div class="qrcode-tips">
+                    <svg class="wechat-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/>
+                    </svg>
+                    <span>请使用微信扫描上方二维码</span>
+                </div>
+            </div>
+
+            <button class="refresh-btn" id="refreshBtn" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                </svg>
+                刷新二维码
+            </button>
+
+            <div class="login-footer">
+                <div class="login-info">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span>登录后即可使用容器连接跟踪查询系统</span>
+                </div>
+                <div class="security-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    安全登录
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRCode.js 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        // 配置
+        const CONFIG = {
+            API_BASE_URL: 'http://localhost:5000/api',
+            POLL_INTERVAL: 2000, // 轮询间隔（毫秒）
+            QR_EXPIRE_TIME: 300000, // 二维码过期时间（5分钟）
+        };
+
+        // 状态管理
+        let pollTimer = null;
+        let qrExpireTimer = null;
+        let currentTicket = null;
+        let qrCodeInstance = null;
+
+        // DOM 元素
+        const qrcodeCanvas = document.getElementById('qrcodeCanvas');
+        const qrcodeOverlay = document.getElementById('qrcodeOverlay');
+        const qrcodeStatus = document.getElementById('qrcodeStatus');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // 生成二维码
+        async function generateQRCode() {
+            try {
+                // 显示加载状态
+                showOverlay('正在生成二维码...', true);
+                refreshBtn.style.display = 'none';
+
+                // 清除之前的二维码
+                if (qrCodeInstance) {
+                    qrcodeCanvas.innerHTML = '';
+                    qrCodeInstance = null;
+                }
+
+                // 调用后端API获取登录票据
+                const response = await fetch(`${CONFIG.API_BASE_URL}/auth/wechat/qrcode`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.error || '生成二维码失败');
+                }
+
+                currentTicket = result.data.ticket;
+                const qrUrl = result.data.qrUrl;
+
+                // 生成二维码
+                qrCodeInstance = new QRCode(qrcodeCanvas, {
+                    text: qrUrl,
+                    width: 208,
+                    height: 208,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                // 隐藏遮罩层
+                hideOverlay();
+
+                // 开始轮询登录状态
+                startPolling();
+
+                // 设置二维码过期定时器
+                qrExpireTimer = setTimeout(() => {
+                    handleQRExpired();
+                }, CONFIG.QR_EXPIRE_TIME);
+
+            } catch (error) {
+                console.error('生成二维码失败:', error);
+                showOverlay('生成二维码失败，请重试', false, true);
+                refreshBtn.style.display = 'inline-flex';
+            }
+        }
+
+        // 轮询登录状态
+        function startPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+            }
+
+            pollTimer = setInterval(async () => {
+                await checkLoginStatus();
+            }, CONFIG.POLL_INTERVAL);
+        }
+
+        // 停止轮询
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            if (qrExpireTimer) {
+                clearTimeout(qrExpireTimer);
+                qrExpireTimer = null;
+            }
+        }
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            if (!currentTicket) return;
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}/auth/wechat/check?ticket=${currentTicket}`);
+                const result = await response.json();
+
+                console.log('检查登录状态返回:', result);
+
+                if (!result.success) {
+                    console.log('检查登录失败:', result.error);
+                    return;
+                }
+
+                const status = result.data.status;
+                console.log('当前登录状态:', status);
+
+                switch (status) {
+                    case 'scanned':
+                        // 用户已扫码，等待确认
+                        console.log('用户已扫码');
+                        showOverlay('扫码成功，请在手机上确认登录', true);
+                        break;
+
+                    case 'confirmed':
+                        // 用户已确认，登录成功
+                        console.log('用户已确认登录，token:', result.data.token);
+                        handleLoginSuccess(result.data.token, result.data.userInfo);
+                        break;
+
+                    case 'cancelled':
+                        // 用户取消登录
+                        console.log('用户取消登录');
+                        handleLoginCancelled();
+                        break;
+
+                    case 'expired':
+                        // 二维码已过期
+                        console.log('二维码已过期');
+                        handleQRExpired();
+                        break;
+
+                    default:
+                        // pending 状态，继续轮询
+                        console.log('等待扫码...');
+                        break;
+                }
+
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+            }
+        }
+
+        // 登录成功
+        function handleLoginSuccess(token, userInfo) {
+            console.log('登录成功，准备跳转...', { token, userInfo });
+            
+            stopPolling();
+
+            // 保存 token 到 localStorage
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('user_info', JSON.stringify(userInfo));
+            
+            console.log('Token 已保存:', localStorage.getItem('auth_token'));
+            console.log('用户信息已保存:', localStorage.getItem('user_info'));
+
+            // 显示成功状态
+            qrcodeOverlay.innerHTML = `
+                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <div class="qrcode-status">登录成功！正在跳转...</div>
+            `;
+            qrcodeOverlay.classList.add('show');
+
+            // 延迟跳转到主页面
+            console.log('1.5秒后将跳转到 index.html');
+            setTimeout(() => {
+                console.log('开始跳转到 index.html');
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+
+        // 登录取消
+        function handleLoginCancelled() {
+            stopPolling();
+            showOverlay('登录已取消', false, true);
+            refreshBtn.style.display = 'inline-flex';
+        }
+
+        // 二维码过期
+        function handleQRExpired() {
+            stopPolling();
+            showOverlay('二维码已过期', false, true);
+            refreshBtn.style.display = 'inline-flex';
+        }
+
+        // 显示遮罩层
+        function showOverlay(message, showSpinner = false, showError = false) {
+            qrcodeStatus.textContent = message;
+            loadingSpinner.style.display = showSpinner ? 'block' : 'none';
+            
+            if (showError) {
+                qrcodeOverlay.innerHTML = `
+                    <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    <div class="qrcode-status">${message}</div>
+                `;
+            }
+            
+            qrcodeOverlay.classList.add('show');
+        }
+
+        // 隐藏遮罩层
+        function hideOverlay() {
+            qrcodeOverlay.classList.remove('show');
+        }
+
+        // 刷新二维码按钮
+        refreshBtn.addEventListener('click', () => {
+            generateQRCode();
+        });
+
+        // 页面加载时检查登录状态
+        window.addEventListener('DOMContentLoaded', () => {
+            // 检查是否已经登录
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                // 验证 token 是否有效
+                fetch(`${CONFIG.API_BASE_URL}/auth/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        // Token 有效，直接跳转到主页
+                        window.location.href = 'index.html';
+                    } else {
+                        // Token 无效，清除并生成二维码
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('user_info');
+                        generateQRCode();
+                    }
+                })
+                .catch(() => {
+                    // 验证失败，生成二维码
+                    generateQRCode();
+                });
+            } else {
+                // 未登录，生成二维码
+                generateQRCode();
+            }
+        });
+
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            stopPolling();
+        });
+    </script>
+</body>
+</html>

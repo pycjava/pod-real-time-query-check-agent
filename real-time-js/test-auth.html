@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录状态测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 40px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .info {
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .info strong {
+            display: inline-block;
+            width: 150px;
+            color: #666;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button.danger {
+            background: #ef4444;
+        }
+
+        button.danger:hover {
+            background: #dc2626;
+        }
+
+        pre {
+            background: #2d3748;
+            color: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+            margin: 10px 0;
+        }
+
+        .actions {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 4px;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 登录状态测试页面</h1>
+
+        <div class="section">
+            <h2>1. 本地存储状态</h2>
+            <div id="localStorageInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. 后端连接状态</h2>
+            <div id="backendInfo"></div>
+            <button onclick="testBackend()">测试后端连接</button>
+        </div>
+
+        <div class="section">
+            <h2>3. Token 验证状态</h2>
+            <div id="tokenInfo"></div>
+            <button onclick="testToken()">验证 Token</button>
+        </div>
+
+        <div class="actions">
+            <h2>操作</h2>
+            <button onclick="goToLogin()">跳转到登录页</button>
+            <button onclick="goToIndex()">跳转到主页面</button>
+            <button onclick="clearStorage()" class="danger">清除本地存储</button>
+            <button onclick="location.reload()">刷新页面</button>
+        </div>
+
+        <div class="section">
+            <h2>调试日志</h2>
+            <pre id="debugLog">等待操作...</pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        const debugLog = document.getElementById('debugLog');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+
+        function checkLocalStorage() {
+            const token = localStorage.getItem('auth_token');
+            const userInfo = localStorage.getItem('user_info');
+
+            let html = '';
+            
+            if (token) {
+                html += `<div class="info">
+                    <strong>Token:</strong> 
+                    <span class="status success">已保存</span>
+                    <div style="margin-top: 5px; color: #666; font-size: 12px;">
+                        ${token.substring(0, 50)}...
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="info">
+                    <strong>Token:</strong> 
+                    <span class="status error">未保存</span>
+                </div>`;
+            }
+
+            if (userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    html += `<div class="info">
+                        <strong>用户信息:</strong> 
+                        <span class="status success">已保存</span>
+                        <pre>${JSON.stringify(user, null, 2)}</pre>
+                    </div>`;
+                } catch (error) {
+                    html += `<div class="info">
+                        <strong>用户信息:</strong> 
+                        <span class="status error">解析失败</span>
+                    </div>`;
+                }
+            } else {
+                html += `<div class="info">
+                    <strong>用户信息:</strong> 
+                    <span class="status error">未保存</span>
+                </div>`;
+            }
+
+            document.getElementById('localStorageInfo').innerHTML = html;
+            log('本地存储检查完成');
+        }
+
+        async function testBackend() {
+            log('开始测试后端连接...');
+            const infoDiv = document.getElementById('backendInfo');
+            infoDiv.innerHTML = '<div class="info">正在测试...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    infoDiv.innerHTML = `
+                        <div class="info">
+                            <strong>连接状态:</strong> 
+                            <span class="status success">✓ 成功</span>
+                        </div>
+                        <div class="info">
+                            <strong>服务状态:</strong> ${data.status}
+                        </div>
+                        <div class="info">
+                            <strong>服务名:</strong> ${data.service}
+                        </div>
+                    `;
+                    log('后端连接成功');
+                } else {
+                    throw new Error('后端返回错误');
+                }
+            } catch (error) {
+                infoDiv.innerHTML = `
+                    <div class="info">
+                        <strong>连接状态:</strong> 
+                        <span class="status error">✗ 失败</span>
+                    </div>
+                    <div class="info" style="color: red;">
+                        错误: ${error.message}
+                    </div>
+                `;
+                log('后端连接失败: ' + error.message);
+            }
+        }
+
+        async function testToken() {
+            log('开始验证 Token...');
+            const infoDiv = document.getElementById('tokenInfo');
+            const token = localStorage.getItem('auth_token');
+
+            if (!token) {
+                infoDiv.innerHTML = `
+                    <div class="info">
+                        <strong>验证结果:</strong> 
+                        <span class="status warning">未找到 Token</span>
+                    </div>
+                `;
+                log('未找到 Token');
+                return;
+            }
+
+            infoDiv.innerHTML = '<div class="info">正在验证...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                log('验证响应: ' + JSON.stringify(result));
+
+                if (result.success) {
+                    infoDiv.innerHTML = `
+                        <div class="info">
+                            <strong>验证结果:</strong> 
+                            <span class="status success">✓ Token 有效</span>
+                        </div>
+                        <div class="info">
+                            <strong>用户:</strong> ${result.data.userInfo.nickname || '未知'}
+                        </div>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    `;
+                    log('Token 验证成功');
+                } else {
+                    infoDiv.innerHTML = `
+                        <div class="info">
+                            <strong>验证结果:</strong> 
+                            <span class="status error">✗ Token 无效</span>
+                        </div>
+                        <div class="info" style="color: red;">
+                            ${result.error || '未知错误'}
+                        </div>
+                    `;
+                    log('Token 验证失败: ' + result.error);
+                }
+            } catch (error) {
+                infoDiv.innerHTML = `
+                    <div class="info">
+                        <strong>验证结果:</strong> 
+                        <span class="status error">✗ 请求失败</span>
+                    </div>
+                    <div class="info" style="color: red;">
+                        错误: ${error.message}
+                    </div>
+                `;
+                log('Token 验证请求失败: ' + error.message);
+            }
+        }
+
+        function goToLogin() {
+            log('跳转到登录页...');
+            window.location.href = 'login.html';
+        }
+
+        function goToIndex() {
+            log('跳转到主页面...');
+            window.location.href = 'index.html';
+        }
+
+        function clearStorage() {
+            if (confirm('确定要清除所有本地存储吗？')) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_info');
+                log('本地存储已清除');
+                location.reload();
+            }
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('DOMContentLoaded', () => {
+            log('页面加载完成，开始检查...');
+            checkLocalStorage();
+            testBackend();
+            
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                testToken();
+            }
+        });
+    </script>
+</body>
+</html>

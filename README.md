@@ -24,10 +24,13 @@
 ```
 pod-real-time-query-check-agent/
 ├── real-time-js/          # 前端 Web 应用
-│   ├── index.html         # 主 HTML 文件
+│   ├── login.html         # 微信登录页面
+│   ├── index.html         # 主 HTML 文件（需登录访问）
+│   ├── auth.js            # 身份验证工具模块
 │   ├── style.css          # 样式文件
 │   ├── script.js          # JavaScript 逻辑
-│   └── test-links.html    # 测试链接页面
+│   ├── test-links.html    # 测试链接页面
+│   └── README-LOGIN.md    # 登录功能详细文档
 ├── real-time-py/          # Flask 后端 API
 │   ├── app/               # 应用代码
 │   │   ├── __init__.py    # Flask 应用初始化
@@ -48,6 +51,7 @@ pod-real-time-query-check-agent/
 ## 🎯 功能特性
 
 ### 前端功能
+- 🔐 **微信登录**: 微信扫码登录，保护系统安全
 - 🔍 **实时查询**: 查询容器连接跟踪事件状态
 - 🌐 **多协议支持**: 支持 TCP、UDP、ICMP 协议
 - 📊 **详细信息**: 显示连接状态、源 Pod IP 和完整的 Pod 信息
@@ -57,13 +61,16 @@ pod-real-time-query-check-agent/
 - 🔗 **URL 参数支持**: 支持从 URL 参数自动填充表单并查询
 - 📋 **链接分享**: 一键复制查询链接，方便分享查询结果
 - 📑 **多 Pod 标签页**: 支持多个 Pod 信息的标签页切换显示
+- 👤 **用户管理**: 显示用户信息，支持退出登录
 
 ### 后端功能
+- 🔐 **微信登录 API**: 生成二维码、验证登录状态
+- 🔑 **身份验证**: 基于 Token 的认证机制
 - ✅ **RESTful API**: 标准的 HTTP 接口
 - ✅ **连接状态查询**: TCP/UDP/ICMP 协议支持
 - ✅ **Pod 信息查询**: 获取详细的 Pod 信息
 - ✅ **参数验证**: IP 地址、端口号、协议类型验证
-- ✅ **CORS 跨域支持**: 支持前后端分离部署
+- ✅ **CORS 跨域支持**: 支持前后端分离部署（支持 Authorization 头）
 - ✅ **错误处理**: 完整的错误处理和日志记录
 - ✅ **K8s 集成**: 支持集成 Kubernetes API（可选）
 
@@ -108,13 +115,22 @@ pod-real-time-query-check-agent/
 
 本项目分为前端和后端两部分，可以独立运行或组合使用。
 
+### ⚠️ 重要提示：微信登录功能
+
+**本系统已集成微信扫码登录功能，用户必须登录后才能访问主应用页面！**
+
+- 📱 首次访问需要微信扫码登录
+- 🔐 所有 API 请求都需要认证令牌
+- 👤 登录后可查看用户信息和退出登录
+- 📖 详细文档：[real-time-js/README-LOGIN.md](real-time-js/README-LOGIN.md)
+
 ### 方式一：仅运行前端（使用模拟数据）
 
-前端可以独立运行，使用内置的模拟数据进行演示。
+前端可以独立运行，使用内置的模拟数据进行演示。**注意：仍需要后端服务提供登录功能！**
 
 ### 方式二：前后端联调（推荐）
 
-先启动后端 API 服务，再运行前端，实现完整的数据查询功能。
+先启动后端 API 服务（提供登录和查询功能），再运行前端，实现完整的功能。
 
 ---
 
@@ -149,7 +165,18 @@ npx http-server -p 8000
 
 #### 3. 访问应用
 
-打开浏览器访问 `http://localhost:8000`
+打开浏览器访问：
+- **登录页**: `http://localhost:8000/login.html`
+- **主应用**: `http://localhost:8000/index.html`（需要先登录）
+
+**首次访问流程**：
+1. 访问任意页面会自动跳转到登录页
+2. 等待二维码生成（约 1 秒）
+3. 使用微信扫描二维码（模拟版本会自动登录）
+4. 2 秒后显示"已扫码"
+5. 4 秒后自动登录并跳转到主页面
+
+💡 **注意**：当前版本使用**模拟登录**，实际生产环境需要集成真实的微信 API。
 
 ### 前端技术实现
 
@@ -432,7 +459,9 @@ http://conntrack.example.com/?protocol=TCP&sourceIp=MQ_IP&sourcePort=5672&target
 
 ### 前端模块（real-time-js）
 
-- **index.html**: 包含完整的页面结构（表单、结果展示区域）
+- **login.html**: 微信扫码登录页面
+- **auth.js**: 身份验证工具（Token 管理、登录状态检查）
+- **index.html**: 主应用页面（需登录后访问）
 - **style.css**: 全局样式、组件样式、响应式设计、动画效果
 - **script.js**: 表单验证、API 调用、结果展示、URL 参数处理
 - **test-links.html**: URL 参数功能测试页面
@@ -916,9 +945,79 @@ curl -X POST http://localhost:5000/api/conntrack/query \
 
 ### API 接口文档
 
-#### 1. 查询连接状态
+#### 认证相关接口
 
-**接口**: `POST /api/conntrack/query`
+##### 1. 生成微信登录二维码
+
+**接口**: `POST /api/auth/wechat/qrcode`
+
+**响应**:
+```json
+{
+    "success": true,
+    "data": {
+        "ticket": "uuid-string",
+        "qrUrl": "weixin://login?ticket=xxx",
+        "expireTime": 300
+    }
+}
+```
+
+##### 2. 检查登录状态
+
+**接口**: `GET /api/auth/wechat/check?ticket={ticket}`
+
+**响应**:
+```json
+{
+    "success": true,
+    "data": {
+        "status": "confirmed",
+        "token": "auth-token",
+        "userInfo": {
+            "openid": "xxx",
+            "nickname": "微信用户",
+            "avatar": "https://..."
+        }
+    }
+}
+```
+
+##### 3. 验证令牌
+
+**接口**: `GET /api/auth/verify`  
+**请求头**: `Authorization: Bearer {token}`
+
+**响应**:
+```json
+{
+    "success": true,
+    "data": {
+        "valid": true,
+        "userInfo": {...}
+    }
+}
+```
+
+##### 4. 退出登录
+
+**接口**: `POST /api/auth/logout`  
+**请求头**: `Authorization: Bearer {token}`
+
+**响应**:
+```json
+{
+    "success": true,
+    "message": "登出成功"
+}
+```
+
+#### 业务功能接口
+
+##### 5. 查询连接状态（需要认证）
+
+**接口**: `POST /api/conntrack/query`  
+**请求头**: `Authorization: Bearer {token}`
 
 **请求体**:
 ```json
@@ -952,7 +1051,7 @@ curl -X POST http://localhost:5000/api/conntrack/query \
 }
 ```
 
-#### 2. 服务状态
+##### 6. 服务状态
 
 **接口**: `GET /api/conntrack/status`
 
@@ -969,7 +1068,7 @@ curl -X POST http://localhost:5000/api/conntrack/query \
 }
 ```
 
-#### 3. 健康检查
+##### 7. 健康检查
 
 **接口**: `GET /health`
 
@@ -1056,11 +1155,15 @@ server {
 
 生产环境部署时请注意：
 
-1. **修改密钥**: 更改 `.env` 文件中的 `SECRET_KEY`
-2. **配置 CORS**: 设置具体的允许源，而不是 `*`
-3. **启用 HTTPS**: 使用 SSL/TLS 证书
-4. **添加认证**: 实现 API 密钥或 JWT 认证
-5. **K8s 权限**: 配置合适的 RBAC 权限
+1. **微信登录集成**: 申请微信开放平台账号，集成真实的微信登录 API
+2. **使用 Redis**: 将会话存储迁移到 Redis，不要使用内存存储
+3. **修改密钥**: 更改 `.env` 文件中的 `SECRET_KEY`
+4. **配置 CORS**: 设置具体的允许源，而不是 `*`
+5. **启用 HTTPS**: 使用 SSL/TLS 证书
+6. **Token 管理**: 设置合理的过期时间，实现 Token 刷新机制
+7. **请求限流**: 添加 API 请求频率限制
+8. **K8s 权限**: 配置合适的 RBAC 权限
+9. **审计日志**: 记录所有用户操作日志
 
 ### 更多信息
 
